@@ -32,7 +32,6 @@
 
 ```mermaid
 graph TD;
-    App["App (Root)<br/><i>Main container and styles</i>"]
     HomePage["HomePage<br/><i>useTodos() hook</i><br/><b>Local State:</b> filter<br/><b>From useTodos:</b> todos, isLoading, error"]
     
     TodoHeader["TodoHeader<br/><i>Displays title</i>"]
@@ -43,10 +42,6 @@ graph TD;
     
     TodoItem["TodoItem<br/><b>Props:</b> todo, toggleTodo, deleteTodo"]
     TodoEmpty["TodoEmpty<br/><i>Shown when list is empty</i>"]
-
-    subgraph "Application Structure"
-        App --> HomePage
-    end
 
     subgraph "Todo Feature"
         HomePage --> TodoHeader
