@@ -2,44 +2,41 @@
 
 ## Tech Stack
 
-- [React](https://react.dev/)
-- [Axios](https://axios-http.com/docs/intro) (for HTTP requests to the API)
-- [TailwindCSS](https://tailwindcss.com/) (for styling)
+-   [React](https://react.dev/)
+-   [Axios](https://axios-http.com/docs/intro) (for HTTP requests to the API)
+-   [TailwindCSS](https://tailwindcss.com/) (for styling)
 
+## Design Patterns Used
 
-### Used Design Patterns
+### Core Patterns
 
-#### Core Patterns
+-   **Custom Hook Pattern**: The central pattern of the project. The `useTodos` hook encapsulates all state logic and data interaction — fetching tasks, managing loading and errors, and providing functions to add, update, and delete tasks. The `HomePage` component uses `useTodos()` while managing its own UI-specific states (filter, search text, pagination).
+-   **Service Layer Pattern**: The API logic is isolated in asynchronous functions (`fetchTodosAPI`, `updateTodoAPI`, `deleteTodoAPI`) inside `useTodos.js`. This decouples business logic from the HTTP client (Axios), improving modularity.
+-   **Container/Presentational Pattern**: Clear separation between "smart" container `HomePage` managing state and "dumb" presentational components (`TodoItem`, `TodoHeader`, `TodoFilters`, `AddTodoForm`, `SearchAndLimit`, `PaginationControls`) receiving data and callbacks as props.
+-   **Unidirectional Data Flow**: State flows top-down via props; updates flow bottom-up via callbacks.
 
-- **Custom Hook Pattern**: This is the central pattern of the project. The `useTodos` hook encapsulates all state logic and data interaction: fetching tasks, loading status, error handling, as well as functions for adding, updating, and deleting tasks. The `HomePage` component calls `useTodos()` to get the necessary data and functions, while managing its own UI-specific state (filter).
-- **Service Layer Pattern**: The API communication logic is isolated into separate asynchronous functions (`fetchTodosAPI`, `updateTodoAPI`, `deleteTodoAPI`) within the `useTodos.js` file. These functions act as a "service layer" that handles all interactions with the external API. This decouples the application's business logic from the specific HTTP client (Axios), making the code more modular and easier to maintain.
-- **Container/Presentational Pattern**: The project clearly separates "smart" components that manage state and logic from "dumb" components that only display data.
-    - **`HomePage.jsx`** is the "smart" container. It fetches data using `useTodos`, manages local filter state, and coordinates all handler functions.
-    - **`TodoItem`, `TodoHeader`, `TodoFilters`, `AddTodoForm`** are presentational components. They receive data and functions via `props` and are not concerned with where the data comes from.
-- **Unidirectional Data Flow**: State flows "top-down" from parent to child components via `props` (e.g., from `HomePage` to `TodoList`). Changes are communicated "bottom-up" via callback functions (e.g., `deleteTodo` from `TodoItem` to `HomePage`).
+### Feature-Specific Patterns
 
+-   **Optimistic UI Updates**: Immediate local state updates in `toggleTodo` and `deleteTodo` within `useTodos` for responsive UI, with rollback on server error.
+-   **Conditional Rendering**: `TodoList` renders `TodoEmpty` if tasks array is empty. `HomePage` conditionally shows loading and error messages.
+-   **State Colocation**: Global server state (`todos`, `isLoading`, `error`) managed by `useTodos` and passed to `HomePage`. UI-specific states like `filter`, `searchText`, `pagination`, and input control are local to components.
 
-#### Feature-Specific Patterns
+## Component Tree \& Data Flow
 
-- **Optimistic UI Updates**: In the `useTodos` hook, the `toggleTodo` and `deleteTodo` functions immediately update the local state (UI) before the server has responded. This makes the interface feel extremely fast and responsive. A `try...catch` block serves as a safety net to roll back the changes if the server request fails.
-- **Conditional Rendering**: The `TodoList` component renders the `TodoEmpty` component only when the `todos` array is empty. Also, `HomePage` conditionally displays loading (`Loading...`) and error (`Error...`) messages.
-- **State Colocation**: The global server state (`todos`, `isLoading`, `error`) is managed by the `useTodos` hook and passed to the `HomePage` component. Meanwhile, UI-specific state such as `filter` in `HomePage` and input text in `AddTodoForm` remains local to those components, preventing unnecessary re-renders of the entire application.
-
-
-### Component Tree \& Data Flow
-
-#### Diagram
+### Diagram
 
 ```mermaid
 graph TD;
-    HomePage["HomePage<br/><i>useTodos() hook</i><br/><b>Local State:</b> filter<br/><b>From useTodos:</b> todos, isLoading, error"]
-    
+    HomePage["HomePage<br/><i>useTodos() hook</i><br/><b>Local State:</b> filter, searchText, currentPage, limit<br/><b>From useTodos:</b> todos, isLoading, error"]
+
     TodoHeader["TodoHeader<br/><i>Displays title</i>"]
     AddTodoForm["AddTodoForm<br/><b>State:</b> inputText<br/><b>Props:</b> addTodo"]
     TodoFilters["TodoFilters<br/><b>Props:</b> activeFilter, setFilter"]
+    SearchAndLimit["SearchAndLimit<br/><b>Props:</b> searchText, setSearchText, limit, setLimit"]
+    PaginationControls["PaginationControls<br/><b>Props:</b> currentPage, setCurrentPage, totalPages"]
     TodoList["TodoList<br/><b>Props:</b> todos[], toggleTodo, deleteTodo"]
     TodoStats["TodoStats<br/><b>Props:</b> count"]
-    
+
     TodoItem["TodoItem<br/><b>Props:</b> todo, toggleTodo, deleteTodo"]
     TodoEmpty["TodoEmpty<br/><i>Shown when list is empty</i>"]
 
@@ -47,6 +44,8 @@ graph TD;
         HomePage --> TodoHeader
         HomePage --> AddTodoForm
         HomePage --> TodoFilters
+        HomePage --> SearchAndLimit
+        HomePage --> PaginationControls
         HomePage --> TodoList
         HomePage --> TodoStats
     end
@@ -57,51 +56,40 @@ graph TD;
     end
 
     style HomePage stroke:#b3d9ff,stroke-width:2px
-    
+
     AddTodoForm -.->|"addTodo(text)"| HomePage
     TodoFilters -.->|"setFilter(filterType)"| HomePage
+    SearchAndLimit -.->|"setSearchText(text), setLimit(number)"| HomePage
+    PaginationControls -.->|"setCurrentPage(number)"| HomePage
     TodoItem -.->|"toggleTodo(id)"| TodoList
     TodoItem -.->|"deleteTodo(id)"| TodoList
     TodoList -.->|"toggleTodo(id)<br/>deleteTodo(id)"| HomePage
 ```
 
-
-#### State Management Overview
+### State Management Overview
 
 **useTodos Hook (Data Layer)**
 
-- `todos` — array of task objects
-- `isLoading` — loading status
-- `error` — error messages
-- Functions: `addTodo`, `toggleTodo`, `deleteTodo`
+-   `todos` — array of task objects
+-   `isLoading` — loading status
+-   `error` — error messages
+-   Functions: `addTodo`, `toggleTodo`, `deleteTodo`
 
 **HomePage Component (UI Layer)**
 
-- `filter` — local UI state for filtering ('all', 'active', 'done')
+-   `filter` — task filter ('all', 'active', 'done')
+-   `searchText` — search input state to filter task text
+-   `currentPage`, `limit` — pagination state controlling current page and tasks per page
 
-This separation ensures that data management logic is isolated in the custom hook, while UI-specific state remains in the component.[^1][^2]
+This architecture isolates data management in the hook while UI-specific states remain local for performance.
 
-#### Diagram Explained
+### Diagram Explanation
 
-- **App**: The root component. It renders the main layout and the primary `HomePage`.
-- **HomePage**:
-    - This is the main "smart" component (container).
-    - It calls the `useTodos()` custom hook to get the `todos` array, `isLoading`/`error` states, and action functions (`addTodo`, `toggleTodo`, `deleteTodo`).
-    - It manages the local filter state ('all', 'active', 'done') separately from the hook.
-    - **Data Down**: It passes `addTodo` to `AddTodoForm`.
-    - **Data Down**: It passes the filtered `todos` array and the `toggleTodo`, `deleteTodo` functions to the `TodoList` component.
-    - **Data Down**: It passes filter state and control functions (`activeFilter`, `setFilter`) to `TodoFilters`.
-- **AddTodoForm**:
-    - A "dumb" component that receives `addTodo` as a prop.
-    - **Callback Up**: On form submission, it invokes `addTodo(newTodoText)`, sending the new task's content up to be handled by the `useTodos` hook.
-- **TodoFilters**:
-    - Receives the current filter and functions to change it.
-    - **Callback Up**: Invokes `setFilter(filterType)` when a filter button is clicked.
-- **TodoList**:
-    - Receives the filtered `todos` array.
-    - If the array is empty, it conditionally renders the `TodoEmpty` component.
-    - Otherwise, it maps over the array and renders a `TodoItem` for each todo, passing down the `todo` object and the `onToggle` and `onDelete` callbacks.
-- **TodoItem**:
-    - Displays a single todo.
-    - **Callback Up**: Invokes `toggleTodo(todo.id)` when its checkbox is clicked.
-    - **Callback Up**: Invokes `deleteTodo(todo.id)` when its delete button is clicked.
+-   **App**: Root component rendering layout and `HomePage`.
+-   **HomePage**: Smart container component using `useTodos()`; manages local UI states for filtering, searching, and pagination; passes data and callback props to child components.
+-   **AddTodoForm**: Controlled component receiving `addTodo` callback to add new tasks.
+-   **TodoFilters**: Receives and updates filter state.
+-   **SearchAndLimit**: Controls search text and visible item limit.
+-   **PaginationControls**: Controls pagination page.
+-   **TodoList**: Conditionally renders empty state or task list.
+-   **TodoItem**: Individual task item with toggle and delete handlers.
