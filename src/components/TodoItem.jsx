@@ -1,76 +1,84 @@
 import { useState } from "react";
 
-const TodoItem = ({ todo, toggleTodo, deleteTodo, editTodoTitle }) => {
+const TodoItem = ({ todo, onToggle, onDelete, onEdit }) => {
     const [isEditing, setIsEditing] = useState(false);
-    const [editValue, setEditValue] = useState(todo.todo);
+    const [editText, setEditText] = useState(todo.todo);
 
     const handleEdit = () => {
-        setIsEditing(true);
-    };
-
-    const handleSave = () => {
-        if (editValue.trim() && editValue !== todo.todo) {
-            editTodoTitle(todo.id, editValue.trim());
+        if (editText.trim() && editText !== todo.todo) {
+            onEdit(todo.id, editText);
         }
         setIsEditing(false);
     };
 
-    const handleKeyDown = (e) => {
-        if (e.key === "Enter") {
-            handleSave();
-        }
-        if (e.key === "Escape") {
-            setIsEditing(false);
-            setEditValue(todo.todo);
-        }
+    const handleCancel = () => {
+        setEditText(todo.todo);
+        setIsEditing(false);
     };
 
     return (
-        <li className="group flex items-center p-3 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+        <div className="flex items-center gap-4 p-5 bg-slate-700/30 border border-slate-600/30 rounded-2xl hover:bg-slate-700/40 hover:border-slate-600/50 transition-all backdrop-blur-sm group">
             <input
                 type="checkbox"
                 checked={todo.completed}
-                onChange={() => toggleTodo(todo.id)}
-                className="h-5 w-5 rounded-full border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                onChange={() => onToggle(todo.id)}
+                className="w-6 h-6 text-slate-500 bg-slate-600 border-slate-500 rounded-lg focus:ring-2 focus:ring-slate-500 cursor-pointer transition-all"
             />
-            <span className="ml-4 flex-grow text-lg">
-                {isEditing ? (
+
+            {isEditing ? (
+                <div className="flex-1 flex gap-3">
                     <input
                         type="text"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        className="border px-2 py-1 rounded"
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") handleEdit();
+                            if (e.key === "Escape") handleCancel();
+                        }}
+                        className="flex-1 px-4 py-3 bg-slate-700 border border-slate-600 text-slate-100 rounded-xl focus:ring-2 focus:ring-slate-500 focus:outline-none"
                         autoFocus
-                        onBlur={handleSave}
                     />
-                ) : (
+                    <button
+                        onClick={handleEdit}
+                        className="px-5 py-3 bg-slate-600 text-slate-100 rounded-xl hover:bg-slate-500 transition-all font-medium shadow-md"
+                    >
+                        Save
+                    </button>
+                    <button
+                        onClick={handleCancel}
+                        className="px-5 py-3 bg-slate-700 text-slate-300 rounded-xl hover:bg-slate-600 transition-all font-medium"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            ) : (
+                <>
                     <span
-                        className={
+                        className={`flex-1 text-lg ${
                             todo.completed
-                                ? "text-gray-400 line-through"
-                                : "text-gray-700"
-                        }
+                                ? "line-through text-slate-500"
+                                : "text-slate-200"
+                        }`}
                     >
                         {todo.todo}
                     </span>
-                )}
-            </span>
-            {!isEditing && (
-                <button
-                    onClick={handleEdit}
-                    className="ml-2 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-indigo-600 transition-opacity"
-                >
-                    Edit
-                </button>
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                            onClick={() => setIsEditing(true)}
+                            className="px-5 py-2 bg-slate-600 text-slate-100 rounded-xl hover:bg-slate-500 transition-all font-medium shadow-md"
+                        >
+                            Edit
+                        </button>
+                        <button
+                            onClick={() => onDelete(todo.id)}
+                            className="px-5 py-2 bg-slate-700 text-slate-300 rounded-xl hover:bg-slate-600 transition-all font-medium shadow-md"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                </>
             )}
-            <button
-                onClick={() => deleteTodo(todo.id)}
-                className="ml-4 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity"
-            >
-                &#x2715;
-            </button>
-        </li>
+        </div>
     );
 };
 

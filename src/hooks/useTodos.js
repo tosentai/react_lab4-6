@@ -3,7 +3,7 @@ import axios from "axios";
 
 const API_URL = "https://dummyjson.com/todos";
 
-export const useTodos = () => {
+export const useTodos = (completedFilter = "all") => {
     const [allTodos, setAllTodos] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -11,7 +11,6 @@ export const useTodos = () => {
     const [limitPerPage, setLimitPerPage] = useState(10);
     const [searchTerm, setSearchTerm] = useState("");
 
-    // Завантажуємо всі todos одразу
     const fetchAllTodos = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -29,16 +28,24 @@ export const useTodos = () => {
         fetchAllTodos();
     }, [fetchAllTodos]);
 
-    // Фільтруємо todos по пошуковому запиту
     const filteredTodos = useMemo(() => {
-        if (!searchTerm.trim()) return allTodos;
+        let filtered = allTodos;
 
-        return allTodos.filter((todo) =>
-            todo.todo.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [allTodos, searchTerm]);
+        if (searchTerm.trim()) {
+            filtered = filtered.filter((todo) =>
+                todo.todo.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
 
-    // Пагінація відфільтрованих todos
+        if (completedFilter === "active") {
+            filtered = filtered.filter((todo) => !todo.completed);
+        } else if (completedFilter === "done") {
+            filtered = filtered.filter((todo) => todo.completed);
+        }
+
+        return filtered;
+    }, [allTodos, searchTerm, completedFilter]);
+
     const paginatedTodos = useMemo(() => {
         const startIndex = (currentPage - 1) * limitPerPage;
         const endIndex = startIndex + limitPerPage;
@@ -48,10 +55,12 @@ export const useTodos = () => {
     const totalTodos = filteredTodos.length;
     const totalPages = Math.ceil(totalTodos / limitPerPage);
 
-    // Скидаємо на першу сторінку при зміні пошуку
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, completedFilter]);
+
     const handleSearchTermChange = useCallback((term) => {
         setSearchTerm(term);
-        setCurrentPage(1);
     }, []);
 
     const addTodo = useCallback((todoText) => {
@@ -66,14 +75,12 @@ export const useTodos = () => {
 
     const toggleTodo = useCallback(
         async (id) => {
-            // Оптимістичне оновлення UI
             setAllTodos((prevTodos) =>
                 prevTodos.map((t) =>
                     t.id === id ? { ...t, completed: !t.completed } : t
                 )
             );
 
-            // Відправляємо на сервер тільки якщо це серверний todo
             try {
                 if (typeof id === "number" && id < 1000000000000) {
                     const todoToToggle = allTodos.find((t) => t.id === id);
@@ -82,7 +89,6 @@ export const useTodos = () => {
                     });
                 }
             } catch (err) {
-                // Відкочуємо зміни при помилці
                 setAllTodos((prevTodos) =>
                     prevTodos.map((t) =>
                         t.id === id ? { ...t, completed: !t.completed } : t
@@ -95,7 +101,6 @@ export const useTodos = () => {
     );
 
     const deleteTodo = useCallback(async (id) => {
-        // Оптимістичне видалення
         setAllTodos((prevTodos) => prevTodos.filter((t) => t.id !== id));
 
         try {
@@ -104,27 +109,22 @@ export const useTodos = () => {
             }
         } catch (err) {
             setError(err.message);
-            // Можна додати відкат змін якщо потрібно
         }
     }, []);
 
     const editTodoTitle = useCallback(
         async (id, newTitle) => {
-            // Зберігаємо старе значення для можливого відкату
             const oldTodo = allTodos.find((t) => t.id === id);
 
-            // Оптимістичне оновлення
             setAllTodos((prev) =>
                 prev.map((t) => (t.id === id ? { ...t, todo: newTitle } : t))
             );
 
-            // Відправляємо на сервер тільки для серверних todos
             if (typeof id === "number" && id < 1000000000000) {
                 try {
                     await axios.put(`${API_URL}/${id}`, { todo: newTitle });
                     setError(null);
                 } catch (err) {
-                    // Відкочуємо зміни при помилці
                     setAllTodos((prev) =>
                         prev.map((t) => (t.id === id ? oldTodo : t))
                     );
@@ -147,6 +147,11 @@ export const useTodos = () => {
         }
     };
 
+    const goToPage = (page) => {
+        const pageNumber = Math.max(1, Math.min(page, totalPages));
+        setCurrentPage(pageNumber);
+    };
+
     const setLimit = (limit) => {
         setLimitPerPage(limit);
         setCurrentPage(1);
@@ -163,8 +168,10 @@ export const useTodos = () => {
         currentPage,
         limitPerPage,
         totalTodos,
+        totalPages,
         goToNextPage,
         goToPrevPage,
+        goToPage,
         setLimit,
         searchTerm,
         setSearchTerm: handleSearchTermChange,

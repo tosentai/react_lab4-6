@@ -3,25 +3,40 @@ const SearchAndLimit = ({
     setSearchTerm,
     limitPerPage,
     setLimit,
-}) => (
-    <div className="my-4 flex gap-4 items-center">
-        <input
-            type="text"
-            className="w-full p-4 text-lg text-gray-400 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500 transition-colors"
-            placeholder="Search todos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <select
-            className="p-4 text-lg border-2 text-gray-400 border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500 transition-colors"
-            value={limitPerPage}
-            onChange={(e) => setLimit(Number(e.target.value))}
-        >
-            <option value={5}>5 per page</option>
-            <option value={10}>10 per page</option>
-            <option value={20}>20 per page</option>
-        </select>
-    </div>
-);
+}) => {
+    return (
+        <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+                <input
+                    type="text"
+                    placeholder="Search todos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-6 py-4 bg-slate-700/50 border border-slate-600/50 text-slate-100 placeholder-slate-400 rounded-2xl focus:ring-2 focus:ring-slate-500 focus:border-slate-500 focus:outline-none transition-all backdrop-blur-sm"
+                />
+            </div>
+
+            <div className="flex items-center gap-3 bg-slate-700/30 px-6 py-3 rounded-2xl border border-slate-600/30 backdrop-blur-sm">
+                <label
+                    htmlFor="limit"
+                    className="text-slate-300 font-medium whitespace-nowrap"
+                >
+                    Per page:
+                </label>
+                <select
+                    id="limit"
+                    value={limitPerPage}
+                    onChange={(e) => setLimit(Number(e.target.value))}
+                    className="px-4 py-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-xl focus:ring-2 focus:ring-slate-500 focus:outline-none cursor-pointer"
+                >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                </select>
+            </div>
+        </div>
+    );
+};
 
 export default SearchAndLimit;

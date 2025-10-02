@@ -1,20 +1,23 @@
 import TodoItem from "./TodoItem";
 import TodoEmpty from "./TodoEmpty";
 
-const TodoList = ({ todos, toggleTodo, deleteTodo, editTodoTitle }) => {
-    if (todos.length === 0) return <TodoEmpty />;
+const TodoList = ({ todos, onToggle, onDelete, onEdit }) => {
+    if (!todos || todos.length === 0) {
+        return <TodoEmpty />;
+    }
+
     return (
-        <ul>
+        <div className="space-y-4">
             {todos.map((todo) => (
                 <TodoItem
                     key={todo.id}
                     todo={todo}
-                    toggleTodo={toggleTodo}
-                    deleteTodo={deleteTodo}
-                    editTodoTitle={editTodoTitle}
+                    onToggle={onToggle}
+                    onDelete={onDelete}
+                    onEdit={onEdit}
                 />
             ))}
-        </ul>
+        </div>
     );
 };
 

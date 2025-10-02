@@ -9,6 +9,8 @@ import SearchAndLimit from "../components/SearchAndLimit";
 import PaginationControls from "../components/PaginationControls";
 
 const HomePage = () => {
+    const [filter, setFilter] = useState("all");
+
     const {
         todos,
         isLoading,
@@ -20,68 +22,74 @@ const HomePage = () => {
         currentPage,
         limitPerPage,
         totalTodos,
+        totalPages,
         goToNextPage,
         goToPrevPage,
+        goToPage,
         setLimit,
         searchTerm,
         setSearchTerm,
-    } = useTodos();
+    } = useTodos(filter);
 
-    const [filter, setFilter] = useState("all");
     const activeCount = todos.filter((t) => !t.completed).length;
 
-    const handleFilter = (todo) => {
-        if (filter === "active") return !todo.completed;
-        if (filter === "done") return todo.completed;
-        return true;
-    };
-
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-3xl">
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+            <div className="max-w-5xl mx-auto space-y-6">
                 <TodoHeader />
-                <AddTodoForm addTodo={addTodo} isLoading={isLoading} />
 
-                <SearchAndLimit
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                    limitPerPage={limitPerPage}
-                    setLimit={setLimit}
-                />
+                <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-3xl shadow-2xl p-8 space-y-8">
+                    <AddTodoForm onAdd={addTodo} />
 
-                {isLoading && (
-                    <p className="text-center text-gray-500 py-4">
-                        Loading tasks...
-                    </p>
-                )}
-                {error && (
-                    <p className="text-center text-red-500 py-4">
-                        Error: {error}
-                    </p>
-                )}
-
-                {!isLoading && !error && (
-                    <div className="mt-4 border-t border-gray-200">
-                        <TodoList
-                            todos={todos.filter(handleFilter)}
-                            toggleTodo={toggleTodo}
-                            deleteTodo={deleteTodo}
-                            editTodoTitle={editTodoTitle}
+                    <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center justify-between">
+                        <TodoFilters
+                            activeFilter={filter}
+                            setFilter={setFilter}
+                        />
+                        <TodoStats
+                            activeCount={activeCount}
+                            totalCount={totalTodos}
                         />
                     </div>
-                )}
 
-                <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
-                    <TodoStats count={activeCount} />
-                    <TodoFilters activeFilter={filter} setFilter={setFilter} />
-                    <PaginationControls
-                        currentPage={currentPage}
-                        totalTodos={totalTodos}
+                    <SearchAndLimit
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
                         limitPerPage={limitPerPage}
-                        goToNextPage={goToNextPage}
-                        goToPrevPage={goToPrevPage}
+                        setLimit={setLimit}
                     />
-                    <span>({totalTodos} total)</span>
+
+                    {isLoading && (
+                        <div className="text-center py-16 text-slate-400">
+                            <div className="animate-spin rounded-full h-14 w-14 border-b-3 border-slate-400 mx-auto"></div>
+                            <p className="mt-6 text-lg">Loading tasks...</p>
+                        </div>
+                    )}
+
+                    {error && (
+                        <div className="bg-red-900/20 border border-red-800/50 text-red-300 px-6 py-4 rounded-xl backdrop-blur-sm">
+                            <p className="font-semibold">Error: {error}</p>
+                        </div>
+                    )}
+
+                    {!isLoading && !error && (
+                        <>
+                            <TodoList
+                                todos={todos}
+                                onToggle={toggleTodo}
+                                onDelete={deleteTodo}
+                                onEdit={editTodoTitle}
+                            />
+
+                            <PaginationControls
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onNext={goToNextPage}
+                                onPrev={goToPrevPage}
+                                onGoToPage={goToPage}
+                            />
+                        </>
+                    )}
                 </div>
             </div>
         </div>
