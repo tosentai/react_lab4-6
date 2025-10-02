@@ -18,7 +18,7 @@ const AddTodoForm = ({ addTodo }) => {
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="What needs to be done?"
-                className="w-full p-4 text-lg border-2 border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full p-4 text-gray-400 text-lg border-2 border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500 transition-colors"
             />
         </form>
     );

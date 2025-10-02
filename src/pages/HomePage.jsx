@@ -5,63 +5,85 @@ import TodoList from "../components/TodoList";
 import TodoHeader from "../components/TodoHeader";
 import TodoFilters from "../components/TodoFilters";
 import TodoStats from "../components/TodoStats";
+import SearchAndLimit from "../components/SearchAndLimit";
+import PaginationControls from "../components/PaginationControls";
 
 const HomePage = () => {
-    const { todos, isLoading, error, addTodo, toggleTodo, deleteTodo } =
-        useTodos();
-    const [filter, setFilter] = useState("all");
+    const {
+        todos,
+        isLoading,
+        error,
+        addTodo,
+        toggleTodo,
+        deleteTodo,
+        editTodoTitle,
+        currentPage,
+        limitPerPage,
+        totalTodos,
+        goToNextPage,
+        goToPrevPage,
+        setLimit,
+        searchTerm,
+        setSearchTerm,
+    } = useTodos();
 
-    const filteredTodos = todos.filter((todo) => {
+    const [filter, setFilter] = useState("all");
+    const activeCount = todos.filter((t) => !t.completed).length;
+
+    const handleFilter = (todo) => {
         if (filter === "active") return !todo.completed;
         if (filter === "done") return todo.completed;
         return true;
-    });
-
-    const activeCount = todos.filter((t) => !t.completed).length;
-
-    const clearCompleted = () => {
-        const completedTodos = todos.filter((todo) => todo.completed);
-        completedTodos.forEach((todo) => deleteTodo(todo.id));
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-xl p-6">
-            <TodoHeader />
-            <AddTodoForm addTodo={addTodo} />
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-3xl">
+                <TodoHeader />
+                <AddTodoForm addTodo={addTodo} isLoading={isLoading} />
 
-            {isLoading && (
-                <p className="text-center text-gray-500 py-4">
-                    Loading tasks...
-                </p>
-            )}
-            {error && (
-                <p className="text-center text-red-500 py-4">Error: {error}</p>
-            )}
+                <SearchAndLimit
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    limitPerPage={limitPerPage}
+                    setLimit={setLimit}
+                />
 
-            {!isLoading && !error && (
-                <>
+                {isLoading && (
+                    <p className="text-center text-gray-500 py-4">
+                        Loading tasks...
+                    </p>
+                )}
+                {error && (
+                    <p className="text-center text-red-500 py-4">
+                        Error: {error}
+                    </p>
+                )}
+
+                {!isLoading && !error && (
                     <div className="mt-4 border-t border-gray-200">
                         <TodoList
-                            todos={filteredTodos}
+                            todos={todos.filter(handleFilter)}
                             toggleTodo={toggleTodo}
                             deleteTodo={deleteTodo}
+                            editTodoTitle={editTodoTitle}
                         />
                     </div>
-                    <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
-                        <TodoStats count={activeCount} />
-                        <TodoFilters
-                            activeFilter={filter}
-                            setFilter={setFilter}
-                        />
-                        <button
-                            onClick={clearCompleted}
-                            className="hover:text-red-500"
-                        >
-                            Clear Completed
-                        </button>
-                    </div>
-                </>
-            )}
+                )}
+
+                <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+                    <TodoStats count={activeCount} />
+                    <TodoFilters activeFilter={filter} setFilter={setFilter} />
+                    <PaginationControls
+                        currentPage={currentPage}
+                        totalTodos={totalTodos}
+                        limitPerPage={limitPerPage}
+                        goToNextPage={goToNextPage}
+                        goToPrevPage={goToPrevPage}
+                    />
+                    <span>({totalTodos} total)</span>
+                </div>
+            </div>
         </div>
     );
 };

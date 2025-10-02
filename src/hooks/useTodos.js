@@ -3,43 +3,40 @@ import axios from "axios";
 
 const API_URL = "https://dummyjson.com/todos";
 
-const fetchTodosAPI = async () => {
-    const response = await axios.get(`${API_URL}?limit=10`);
-    return response.data.todos;
-};
-
-const updateTodoAPI = async (updatedTodo) => {
-    const response = await axios.put(`${API_URL}/${updatedTodo.id}`, {
-        completed: updatedTodo.completed,
-    });
-    return response.data;
-};
-
-const deleteTodoAPI = async (id) => {
-    const response = await axios.delete(`${API_URL}/${id}`);
-    return response.data;
-};
-
 export const useTodos = () => {
     const [todos, setTodos] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const loadTodos = async () => {
+    const [currentPage, setCurrentPage] = useState(1);
+    const [limitPerPage, setLimitPerPage] = useState(10);
+    const [totalTodos, setTotalTodos] = useState(0);
+
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const fetchTodos = useCallback(
+        async (skip = 0, limit = limitPerPage) => {
+            setIsLoading(true);
             try {
-                setIsLoading(true);
-                const fetchedTodos = await fetchTodosAPI();
-                setTodos(fetchedTodos);
+                const res = await axios.get(
+                    `${API_URL}?limit=${limit}&skip=${skip}`
+                );
+                setTodos(res.data.todos);
+                setTotalTodos(res.data.total);
                 setError(null);
             } catch (err) {
                 setError(err.message);
             } finally {
                 setIsLoading(false);
             }
-        };
-        loadTodos();
-    }, []);
+        },
+        [limitPerPage]
+    );
+
+    useEffect(() => {
+        const skip = (currentPage - 1) * limitPerPage;
+        fetchTodos(skip, limitPerPage);
+    }, [currentPage, limitPerPage, fetchTodos]);
 
     const addTodo = useCallback((todoText) => {
         const newTodo = {
@@ -48,59 +45,91 @@ export const useTodos = () => {
             completed: false,
         };
         setTodos((prevTodos) => [newTodo, ...prevTodos]);
+        setTotalTodos((prevTotal) => prevTotal + 1);
     }, []);
 
     const toggleTodo = useCallback(
         async (id) => {
-            const originalTodos = [...todos];
-            const todoToToggle = todos.find((t) => t.id === id);
-            if (!todoToToggle) return;
-
             setTodos((prevTodos) =>
                 prevTodos.map((t) =>
                     t.id === id ? { ...t, completed: !t.completed } : t
                 )
             );
-
             try {
-                if (id < 1000) {
-                    await updateTodoAPI({
-                        id,
+                if (typeof id === "number" && id < 1000000000000) {
+                    const todoToToggle = todos.find((t) => t.id === id);
+                    await axios.put(`${API_URL}/${id}`, {
                         completed: !todoToToggle.completed,
                     });
                 }
             } catch (err) {
                 setError(err.message);
-                setTodos(originalTodos);
             }
         },
         [todos]
     );
 
-    const deleteTodo = useCallback(
-        async (id) => {
-            const originalTodos = [...todos];
-            setTodos((prevTodos) => prevTodos.filter((t) => t.id !== id));
-
-            try {
-                if (id < 1000) {
-                    await deleteTodoAPI(id);
-                }
-            } catch (err) {
-                setError(err.message);
-                setTodos(originalTodos);
+    const deleteTodo = useCallback(async (id) => {
+        setTodos((prevTodos) => prevTodos.filter((t) => t.id !== id));
+        setTotalTodos((prevTotal) => prevTotal - 1);
+        try {
+            if (typeof id === "number" && id < 1000000000000) {
+                await axios.delete(`${API_URL}/${id}`);
             }
-        },
-        [todos]
-    );
+        } catch (err) {
+            setError(err.message);
+        }
+    }, []);
+
+    const editTodoTitle = useCallback(async (id, newTitle) => {
+        try {
+            await axios.put(`${API_URL}/${id}`, { todo: newTitle });
+            setTodos((prev) =>
+                prev.map((t) => (t.id === id ? { ...t, todo: newTitle } : t))
+            );
+        } catch (err) {
+            setError(err.message);
+        }
+    }, []);
+
+    const goToNextPage = () => {
+        if (currentPage < Math.ceil(totalTodos / limitPerPage)) {
+            setCurrentPage((p) => p + 1);
+        }
+    };
+    const goToPrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage((p) => p - 1);
+        }
+    };
+    const setLimit = (limit) => {
+        setLimitPerPage(limit);
+        setCurrentPage(1);
+    };
+
+    const filteredTodos = searchTerm
+        ? todos.filter((todo) =>
+              todo.todo.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        : todos;
 
     return {
-        todos,
+        todos: filteredTodos,
         isLoading,
         error,
         addTodo,
         toggleTodo,
         deleteTodo,
-        setTodos,
+        editTodoTitle,
+        currentPage,
+        limitPerPage,
+        totalTodos,
+        goToNextPage,
+        goToPrevPage,
+        setLimit,
+        searchTerm,
+        setSearchTerm,
     };
 };
+
+export default useTodos;

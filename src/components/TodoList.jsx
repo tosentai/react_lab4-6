@@ -1,11 +1,8 @@
 import TodoItem from "./TodoItem";
 import TodoEmpty from "./TodoEmpty";
 
-const TodoList = ({ todos, toggleTodo, deleteTodo }) => {
-    if (todos.length === 0) {
-        return <TodoEmpty />;
-    }
-
+const TodoList = ({ todos, toggleTodo, deleteTodo, editTodoTitle }) => {
+    if (todos.length === 0) return <TodoEmpty />;
     return (
         <ul>
             {todos.map((todo) => (
@@ -14,6 +11,7 @@ const TodoList = ({ todos, toggleTodo, deleteTodo }) => {
                     todo={todo}
                     toggleTodo={toggleTodo}
                     deleteTodo={deleteTodo}
+                    editTodoTitle={editTodoTitle}
                 />
             ))}
         </ul>
