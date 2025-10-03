@@ -21,18 +21,91 @@
 
 ### Core Patterns
 
--   **Custom Hook Pattern**: The `useTodos` hook encapsulates all state logic including data fetching, filtering, pagination, and CRUD operations. Returns todos, loading state, error state, and handlers for add/toggle/delete/edit operations.
--   **Service Layer Pattern**: API logic is isolated in async functions inside `useTodos.js` using Axios for HTTP requests. Supports optimistic updates with rollback on error.
+-   **Custom Hook Composition Pattern**: The application uses a modular hook architecture where specialized hooks are composed together to create complex functionality.
+-   **Single Responsibility Principle**: Each custom hook handles one specific concern (data fetching, filtering, pagination, or CRUD operations), making the codebase more maintainable and testable.
+-   **Service Layer Pattern**: API logic is isolated in `useTodosCRUD` hook using Axios for HTTP requests with optimistic updates and rollback on error.
 -   **Container/Presentational Pattern**: Clear separation between "smart" container `HomePage` managing state and "dumb" presentational components receiving data and callbacks via props.
 -   **Unidirectional Data Flow**: State flows top-down through props; updates flow bottom-up via callbacks.
 
 ### Feature-Specific Patterns
 
--   **Optimistic UI Updates**: Immediate local state updates in `toggleTodo`, `deleteTodo`, and `editTodoTitle` with automatic rollback on server errors.
--   **Conditional Rendering**: `TodoList` renders `TodoEmpty` when tasks array is empty. `HomePage` conditionally displays loading and error messages.
--   **State Colocation**: Global server state (`allTodos`, `isLoading`, `error`) managed by `useTodos`. UI-specific states (filter, pagination, search) kept local to components or returned from hook.
+-   **Optimistic UI Updates**: Immediate local state updates in `useTodosCRUD` operations (`toggleTodo`, `deleteTodo`, `editTodoTitle`) with automatic rollback on server errors.
+-   **Conditional Rendering**: `TodoList` renders `TodoEmpty` when tasks array is empty; `HomePage` conditionally displays loading and error messages.
+-   **State Colocation**: Global server state (`allTodos`, `isLoading`, `error`) managed by `useTodosFetch`; UI-specific states (filter, pagination, search) kept local to components or returned from specialized hooks.
 -   **Memoization**: `useMemo` optimizes filtering and pagination computations to prevent unnecessary recalculations.
 -   **Controlled Components**: Form inputs in `AddTodoForm`, `SearchAndLimit`, `PaginationControls`, and `TodoItem` (edit mode) maintain their own controlled state.
+
+## Hook Architecture
+
+The application follows a modular hook architecture with four specialized hooks composed into one main hook :
+
+### useTodosFetch
+
+Manages data fetching and initial loading state.
+
+**Responsibilities:**
+
+-   Fetches all todos from API on mount
+-   Manages loading and error states during fetch operations
+-   Provides `allTodos` array and setters for state updates
+
+**Returns:** `{ allTodos, setAllTodos, isLoading, error, setError }`
+
+### useTodosFilter
+
+Handles search and status filtering logic.
+
+**Responsibilities:**
+
+-   Filters todos by search term (case-insensitive title matching)
+-   Filters todos by completion status (all, active, done)
+-   Uses `useMemo` for performance optimization
+
+**Parameters:** `(allTodos, searchTerm, completedFilter)`
+**Returns:** `filteredTodos` array
+
+### usePagination
+
+Generic reusable pagination hook for any array of items.
+
+**Responsibilities:**
+
+-   Slices filtered array into pages based on current page and limit
+-   Provides navigation controls (next, previous, jump to page)
+-   Calculates total pages and manages current page state
+-   Resets to page 1 when items change
+
+**Parameters:** `(items, initialLimit = 10)`
+**Returns:** `{ paginatedItems, currentPage, limitPerPage, totalPages, goToNextPage, goToPrevPage, goToPage, setLimit, resetPage }`
+
+### useTodosCRUD
+
+Encapsulates all create, update, and delete operations with API integration.
+
+**Responsibilities:**
+
+-   `addTodo`: Adds new todo to local state (client-only, no API call)
+-   `toggleTodo`: Toggles completion status with optimistic update and API sync
+-   `deleteTodo`: Removes todo with optimistic update and API sync
+-   `editTodoTitle`: Updates todo title with optimistic update, rollback on error
+-   Handles local-only todos (timestamp IDs) vs server todos
+
+**Parameters:** `(allTodos, setAllTodos, setError)`
+**Returns:** `{ addTodo, toggleTodo, deleteTodo, editTodoTitle }`
+
+### useTodos (Main Composition Hook)
+
+Orchestrates all specialized hooks and manages UI-level state.
+
+**Responsibilities:**
+
+-   Composes `useTodosFetch`, `useTodosFilter`, `usePagination`, and `useTodosCRUD`
+-   Manages search term and completion filter state
+-   Resets pagination when filters change
+-   Provides unified API for consuming components
+
+**Parameters:** `(completedFilter = "all")`
+**Returns:** Complete API with todos, loading/error states, CRUD operations, and pagination controls
 
 ## Component Tree \& Data Flow
 
@@ -41,8 +114,17 @@
 ```mermaid
 graph TB;
     subgraph L1["Logic Layer (Custom Hooks)"]
-        direction LR
-        H1["useTodos(completedFilter)<br/>───────<br/><b>State:</b> allTodos, isLoading, error,<br/>currentPage, limitPerPage, searchTerm<br/><b>API:</b> Axios + DummyJSON<br/><b>Returns:</b> todos[], addTodo, toggleTodo,<br/>deleteTodo, editTodoTitle,<br/>goToNextPage, goToPrevPage, goToPage,<br/>setLimit, setSearchTerm, totalTodos,<br/>totalPages, currentPage, limitPerPage"]
+        direction TB
+        H1["useTodosFetch<br/>───────<br/><b>Manages:</b> API data fetching,<br/>loading state, error handling<br/><b>Returns:</b> allTodos, setAllTodos,<br/>isLoading, error, setError"]
+        H2["useTodosFilter<br/>───────<br/><b>Manages:</b> Search & status filtering<br/><b>Returns:</b> filteredTodos"]
+        H3["usePagination<br/>───────<br/><b>Manages:</b> Page slicing & navigation<br/><b>Returns:</b> paginatedItems, currentPage,<br/>limitPerPage, totalPages, navigation controls"]
+        H4["useTodosCRUD<br/>───────<br/><b>Manages:</b> Add/toggle/delete/edit operations<br/>with optimistic updates<br/><b>Returns:</b> addTodo, toggleTodo,<br/>deleteTodo, editTodoTitle"]
+        H5["useTodos (Composition)<br/>───────<br/><b>Composes:</b> All hooks above<br/><b>State:</b> searchTerm, filter<br/><b>Returns:</b> Complete API for components"]
+
+        H1 --> H5
+        H2 --> H5
+        H3 --> H5
+        H4 --> H5
     end
 
     subgraph L2["Root Layer"]
@@ -74,12 +156,12 @@ graph TB;
         TodoEmpty["TodoEmpty<br/><i>Presentational - no state</i>"]
     end
 
-    subgraph L7["UI Primitives (FilterButton)"]
+    subgraph L7["UI Primitives"]
         direction LR
         FilterButton["FilterButton<br/>───────<br/><b>Props:</b> label, isActive, onClick<br/><i>Used within TodoFilters</i>"]
     end
 
-    H1 -.->|consumes| HomePage
+    H5 -.->|consumes| HomePage
 
     App --> HomePage
     HomePage --> TodoHeader
@@ -97,57 +179,65 @@ graph TB;
 
 ### State Management Overview
 
-**useTodos Hook (Data Layer)**
+**Hook Layer (Data \& Logic)**
 
--   `allTodos` — complete array of all tasks fetched from API
--   `isLoading` — loading status during initial fetch
--   `error` — error messages from API operations
--   `currentPage` — current pagination page number
--   `limitPerPage` — number of tasks displayed per page
--   `searchTerm` — current search query text
--   **Computed values**: `filteredTodos` (filtered by search + status), `paginatedTodos` (current page slice), `totalTodos`, `totalPages`
--   **Functions**: `addTodo`, `toggleTodo`, `deleteTodo`, `editTodoTitle`, `goToNextPage`, `goToPrevPage`, `goToPage`, `setLimit`, `setSearchTerm`
+-   **useTodosFetch**: `allTodos`, `isLoading`, `error`
+-   **useTodosFilter**: Computes `filteredTodos` from `allTodos`, `searchTerm`, and `completedFilter`
+-   **usePagination**: `currentPage`, `limitPerPage`, computes `paginatedItems`, `totalPages`
+-   **useTodosCRUD**: Provides mutation functions without local state
+-   **useTodos**: `searchTerm` state, orchestrates all hooks
 
-**HomePage Component (UI Layer)**
+**Component Layer (UI State)**
 
--   `filter` — task filter state ('all', 'active', 'done')
--   Consumes `useTodos(filter)` hook and passes data/handlers to child components
--   Calculates `activeCount` for statistics display
+-   **HomePage**: `filter` state ('all', 'active', 'done'), computes `activeCount`
+-   **TodoItem**: `isEditing`, `editText` for inline editing mode
+-   **PaginationControls**: `pageInput` for jump-to-page input
 
-**TodoItem Component (Local UI State)**
+### Data Flow
 
--   `isEditing` — toggles between view and edit mode
--   `editText` — controlled input for editing task title
+1. `useTodosFetch` loads data from API on mount
+2. `HomePage` passes `filter` to `useTodos` hook
+3. `useTodosFilter` applies search and filter to `allTodos`
+4. `usePagination` slices `filteredTodos` into current page
+5. `HomePage` distributes paginated data and handlers to child components
+6. User interactions trigger CRUD operations via `useTodosCRUD`
+7. Optimistic updates modify local state immediately, sync with API asynchronously
 
-**PaginationControls Component (Local UI State)**
+### Component Responsibilities
 
--   `pageInput` — controlled input for jump-to-page functionality
-
-### Diagram Explanation
-
--   **App**: Root component rendering layout and `HomePage`.
--   **HomePage**: Smart container using `useTodos()` hook; manages filter state and passes data/callbacks to presentational components.
--   **AddTodoForm**: Controlled form component with local `newTodo` state; calls `onAdd` prop to add new tasks (inserted at start of list).
--   **TodoFilters**: Three filter buttons (All, Active, Done) to control task visibility.
--   **SearchAndLimit**: Combined search input and limit selector for filtering and pagination control.
--   **PaginationControls**: Navigation controls with Prev/Next buttons and jump-to-page input field.
--   **TodoList**: Renders either `TodoEmpty` or list of `TodoItem` components.
--   **TodoItem**: Individual task with toggle checkbox, inline edit mode (double-click or Edit button), and delete button.
--   **TodoStats**: Displays active and total task counts.
--   **TodoHeader**: Simple header component with application title.
--   **TodoEmpty**: Empty state component shown when no tasks match current filters.
+-   **App**: Root component rendering layout and `HomePage`
+-   **HomePage**: Smart container consuming `useTodos()` hook; manages filter state and distributes data/callbacks
+-   **AddTodoForm**: Controlled form with local `newTodo` state; calls `onAdd` to insert new tasks at list start
+-   **TodoFilters**: Three filter buttons (All, Active, Done) controlling task visibility
+-   **SearchAndLimit**: Combined search input and items-per-page selector
+-   **PaginationControls**: Navigation with Prev/Next buttons and jump-to-page input
+-   **TodoList**: Renders `TodoEmpty` or array of `TodoItem` components
+-   **TodoItem**: Individual task with checkbox toggle, inline edit mode (double-click/Edit button), and delete button
+-   **TodoStats**: Displays active and total task counts
+-   **TodoHeader**: Application title header
+-   **TodoEmpty**: Empty state shown when no tasks match filters
+-   **FilterButton**: Reusable filter button used by `TodoFilters`
 
 ## API Integration
 
-The application integrates with **DummyJSON API** for todo operations:
+The application integrates with **DummyJSON API** for todo operations :
 
 -   **GET** `https://dummyjson.com/todos?limit=0` — Fetch all todos on initial load
 -   **PUT** `https://dummyjson.com/todos/:id` — Update todo (toggle completion or edit title)
 -   **DELETE** `https://dummyjson.com/todos/:id` — Delete todo
 
-Local-only todos (identified by timestamp IDs) skip server requests and update only client state.
+Local-only todos (identified by timestamp IDs ≥ 1000000000000) skip server requests and update only client state.
 
 ## Advanced Features
+
+### Modular Hook Architecture
+
+The application demonstrates advanced React patterns by separating concerns into specialized, reusable hooks :
+
+-   **Reusability**: `usePagination` can be extracted and used in other features
+-   **Testability**: Each hook can be tested in isolation
+-   **Maintainability**: Changes to one concern don't affect others
+-   **Composability**: Small hooks combine like building blocks
 
 ### Client-Side Filtering \& Pagination
 
@@ -155,7 +245,7 @@ All data fetching happens once on mount. Filtering (by status and search term) a
 
 ### Optimistic Updates with Rollback
 
-Tasks update immediately in the UI before API calls complete. If API requests fail, the hook automatically reverts changes and displays error messages.
+Tasks update immediately in the UI before API calls complete. If API requests fail, `useTodosCRUD` automatically reverts changes and displays error messages.
 
 ### Inline Editing
 
@@ -163,4 +253,30 @@ Tasks can be edited inline by clicking the Edit button or double-clicking the ta
 
 ### Dynamic Pagination Reset
 
-Changing search terms or filters automatically resets to page 1 to prevent empty page views.
+The main `useTodos` hook automatically resets to page 1 when search terms or filters change to prevent empty page views.
+
+## File Structure
+
+```
+src/
+├── hooks/
+│   ├── useTodosFetch.js      # Data fetching & loading state
+│   ├── useTodosFilter.js     # Search & status filtering
+│   ├── usePagination.js      # Generic pagination logic
+│   ├── useTodosCRUD.js       # CRUD operations with API
+│   └── useTodos.js           # Main composition hook
+├── components/
+│   ├── AddTodoForm.jsx
+│   ├── TodoFilters.jsx
+│   ├── SearchAndLimit.jsx
+│   ├── PaginationControls.jsx
+│   ├── TodoList.jsx
+│   ├── TodoItem.jsx
+│   ├── TodoStats.jsx
+│   ├── TodoHeader.jsx
+│   ├── TodoEmpty.jsx
+│   └── FilterButton.jsx
+├── pages/
+│   └── HomePage.jsx
+└── App.jsx
+```
