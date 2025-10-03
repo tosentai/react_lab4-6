@@ -22,7 +22,8 @@ const AddTodoForm = ({ onAdd }) => {
             />
             <button
                 type="submit"
-                className="px-8 py-4 bg-gradient-to-r from-slate-600 to-slate-700 text-slate-100 cursor-pointer rounded-2xl hover:from-slate-500 hover:to-slate-600 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+                disabled={!newTodo.trim()}
+                className="px-8 py-4 bg-gradient-to-r from-slate-600 to-slate-700 text-slate-100 cursor-pointer rounded-2xl hover:from-slate-500 hover:to-slate-600 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
                 Add
             </button>
