@@ -2,7 +2,7 @@ const FilterButton = ({ label, isActive, onClick }) => {
     return (
         <button
             onClick={onClick}
-            className={`px-6 py-3 rounded-xl font-medium transition-all ${
+            className={`px-6 py-3 cursor-pointer rounded-xl font-medium transition-all ${
                 isActive
                     ? "bg-slate-600 text-slate-100 shadow-lg"
                     : "bg-slate-700/30 text-slate-400 hover:bg-slate-700/50 hover:text-slate-300"

@@ -33,7 +33,7 @@ const PaginationControls = ({
             <button
                 onClick={onPrev}
                 disabled={currentPage === 1}
-                className="w-full sm:w-auto px-8 py-4 bg-slate-700 text-slate-100 rounded-2xl disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed hover:bg-slate-600 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
+                className="w-full sm:w-auto px-8 py-4 bg-slate-700 text-slate-100 cursor-pointer rounded-2xl disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed hover:bg-slate-600 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
             >
                 Previous
             </button>
@@ -57,7 +57,7 @@ const PaginationControls = ({
                     />
                     <button
                         type="submit"
-                        className="px-5 py-3 bg-slate-600 text-slate-100 rounded-xl hover:bg-slate-500 transition-all font-medium shadow-md hover:shadow-lg"
+                        className="px-5 py-3 bg-slate-600 text-slate-100 cursor-pointer rounded-xl hover:bg-slate-500 transition-all font-medium shadow-md hover:shadow-lg"
                     >
                         Go
                     </button>
@@ -67,7 +67,7 @@ const PaginationControls = ({
             <button
                 onClick={onNext}
                 disabled={currentPage === totalPages}
-                className="w-full sm:w-auto px-8 py-4 bg-slate-700 text-slate-100 rounded-2xl disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed hover:bg-slate-600 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
+                className="w-full cursor-pointer sm:w-auto px-8 py-4 bg-slate-700 text-slate-100 rounded-2xl disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed hover:bg-slate-600 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
             >
                 Next
             </button>

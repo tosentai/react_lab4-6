@@ -40,13 +40,13 @@ const TodoItem = ({ todo, onToggle, onDelete, onEdit }) => {
                     />
                     <button
                         onClick={handleEdit}
-                        className="px-5 py-3 bg-slate-600 text-slate-100 rounded-xl hover:bg-slate-500 transition-all font-medium shadow-md"
+                        className="px-5 py-3 cursor-pointer bg-slate-600 text-slate-100 rounded-xl hover:bg-slate-500 transition-all font-medium shadow-md"
                     >
                         Save
                     </button>
                     <button
                         onClick={handleCancel}
-                        className="px-5 py-3 bg-slate-700 text-slate-300 rounded-xl hover:bg-slate-600 transition-all font-medium"
+                        className="px-5 py-3 cursor-pointer bg-slate-700 text-slate-300 rounded-xl hover:bg-slate-600 transition-all font-medium"
                     >
                         Cancel
                     </button>
@@ -65,13 +65,13 @@ const TodoItem = ({ todo, onToggle, onDelete, onEdit }) => {
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="px-5 py-2 bg-slate-600 text-slate-100 rounded-xl hover:bg-slate-500 transition-all font-medium shadow-md"
+                            className="px-5 py-2 cursor-pointer bg-slate-600 text-slate-100 rounded-xl hover:bg-slate-500 transition-all font-medium shadow-md"
                         >
                             Edit
                         </button>
                         <button
                             onClick={() => onDelete(todo.id)}
-                            className="px-5 py-2 bg-slate-700 text-slate-300 rounded-xl hover:bg-slate-600 transition-all font-medium shadow-md"
+                            className="px-5 py-2 cursor-pointer bg-slate-700 text-slate-300 rounded-xl hover:bg-slate-600 transition-all font-medium shadow-md"
                         >
                             Delete
                         </button>
